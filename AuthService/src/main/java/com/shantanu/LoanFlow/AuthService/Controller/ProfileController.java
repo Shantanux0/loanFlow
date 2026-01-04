@@ -1,9 +1,8 @@
 package com.shantanu.LoanFlow.AuthService.Controller;
 
-
-
 import com.shantanu.LoanFlow.AuthService.Services.ProfileService;
 import com.shantanu.LoanFlow.AuthService.Services.impl.EmailService;
+import com.shantanu.LoanFlow.AuthService.common.ApiResponse;
 import com.shantanu.LoanFlow.AuthService.io.ProfileRequest;
 import com.shantanu.LoanFlow.AuthService.io.ProfileResponse;
 import jakarta.validation.Valid;
@@ -22,14 +21,15 @@ public class ProfileController {
 
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
-    public ProfileResponse register(@Valid @RequestBody ProfileRequest request) {
+    public ApiResponse<ProfileResponse> register(@Valid @RequestBody ProfileRequest request) {
         ProfileResponse response = profileService.createProfile(request);
         emailService.sendWelcomeEmail(response.getEmail(), response.getName());
-        return response;
+        return ApiResponse.success(response, "Registration successful");
     }
 
     @GetMapping("/profile")
-    public ProfileResponse getProfile(@CurrentSecurityContext(expression = "authentication?.name") String email) {
-        return profileService.getProfile(email);
+    public ApiResponse<ProfileResponse> getProfile(
+            @CurrentSecurityContext(expression = "authentication?.name") String email) {
+        return ApiResponse.success(profileService.getProfile(email));
     }
 }

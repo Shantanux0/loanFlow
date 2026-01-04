@@ -18,30 +18,26 @@ public class JwtUtil {
     @Value("${jwt.secret.key}")
     private String SECRET_KEY;
 
-    private static final long JWT_EXPIRATION_MS = 1000 * 60 * 60 * 10; // 10 hours
+    private static final long ACCESS_TOKEN_EXPIRATION_MS = 1000 * 60 * 15; // 15 minutes
+    private static final long REFRESH_TOKEN_EXPIRATION_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
 
     // 🔐 Generate token with ROLE
     public String generateToken(UserDetails userDetails) {
-
         Map<String, Object> claims = new HashMap<>();
-        claims.put(
-                "role",
-                userDetails.getAuthorities()
-                        .stream()
-                        .findFirst()
-                        .orElseThrow()
-                        .getAuthority()
-        );
-
-        return createToken(claims, userDetails.getUsername());
+        claims.put("role", userDetails.getAuthorities().stream().findFirst().orElseThrow().getAuthority());
+        return createToken(claims, userDetails.getUsername(), ACCESS_TOKEN_EXPIRATION_MS);
     }
 
-    private String createToken(Map<String, Object> claims, String email) {
+    public String generateRefreshToken(UserDetails userDetails) {
+        return createToken(new HashMap<>(), userDetails.getUsername(), REFRESH_TOKEN_EXPIRATION_MS);
+    }
+
+    private String createToken(Map<String, Object> claims, String email, long expiration) {
         return Jwts.builder()
                 .setClaims(claims)
                 .setSubject(email)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + JWT_EXPIRATION_MS))
+                .setExpiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(SignatureAlgorithm.HS256, SECRET_KEY)
                 .compact();
     }

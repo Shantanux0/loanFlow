@@ -19,29 +19,37 @@ import java.sql.Timestamp;
 public class UserEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id ;
+    private Long id;
     @Column(unique = true)
-    private String userId ;
-    private String name ;
+    private String userId;
+    private String name;
     @Column(unique = true)
-    private String email ;
-    private String password ;
-    private String verifyOtp ;
+    private String email;
+    private String password;
+    private String verifyOtp;
     private Boolean isAccountVerified;
     private Long verifyOtpExpireAt;
     private String resetOtp;
     private Long resetOtpExpireAt;
 
+    // 🔒 Account Locking
+    private Integer failedLoginAttempts;
+    private Long lockTime;
+
+    // 🔒 OTP Security
+    private Integer otpAttempts;
+
+    private Long lastLogin; // New Audit Field
+
     @CreationTimestamp
     @Column(updatable = false)
     private Timestamp createdAt;
+
     @UpdateTimestamp
-    private Timestamp UpdatedAt;
+    private Timestamp updatedAt; // Fixed typo (was UpdatedAt)
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
-
-
 
 }

@@ -12,9 +12,10 @@ import lombok.NoArgsConstructor;
 
 public class ProfileResponse {
     private String userId;
-    private String name ;
-    private String email ;
-    private String password ;
+    private String name;
+    private String email;
+    private String password;
     private boolean isAccountVerified;
+    private com.shantanu.LoanFlow.AuthService.entities.Role role;
 
 }

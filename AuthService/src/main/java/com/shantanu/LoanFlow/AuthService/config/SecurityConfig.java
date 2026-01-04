@@ -1,6 +1,7 @@
 package com.shantanu.LoanFlow.AuthService.config;
 
 import com.shantanu.LoanFlow.AuthService.filter.JwtRequestFilter;
+import com.shantanu.LoanFlow.AuthService.filter.RateLimitFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,9 +20,9 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.filter.CorsFilter;
 
 import java.util.List;
+
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
@@ -29,6 +30,7 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtRequestFilter jwtRequestFilter;
+    private final RateLimitFilter rateLimitFilter;
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
 
     @Bean
@@ -46,24 +48,24 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/auth/login",
                                 "/auth/register",
+                                "/auth/register-admin",
                                 "/auth/send-reset-otp",
                                 "/auth/reset-password",
+                                "/auth/send-otp",
+                                "/auth/verify-otp",
                                 "/auth/logout",
-                                "/auth/is-authenticated"
-                        ).permitAll()
+                                "/auth/refresh-token",
+                                "/auth/is-authenticated")
+                        .permitAll()
 
                         // 🔒 EVERYTHING ELSE
-                        .anyRequest().authenticated()
-                )
+                        .anyRequest().authenticated())
 
-                .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-                .exceptionHandling(ex ->
-                        ex.authenticationEntryPoint(customAuthenticationEntryPoint)
-                )
+                .exceptionHandling(ex -> ex.authenticationEntryPoint(customAuthenticationEntryPoint))
 
+                .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class)
                 .logout(AbstractHttpConfigurer::disable);
 
@@ -73,8 +75,7 @@ public class SecurityConfig {
     // ✅ Spring-managed AuthenticationManager
     @Bean
     public AuthenticationManager authenticationManager(
-            AuthenticationConfiguration configuration
-    ) throws Exception {
+            AuthenticationConfiguration configuration) throws Exception {
         return configuration.getAuthenticationManager();
     }
 
@@ -84,12 +85,9 @@ public class SecurityConfig {
     }
 
     // 🌍 CORS (React frontend)
+    // 🌍 CORS (React frontend)
     @Bean
-    public CorsFilter corsFilter() {
-        return new CorsFilter(corsConfigurationSource());
-    }
-
-    private CorsConfigurationSource corsConfigurationSource() {
+    public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(List.of("http://localhost:5173"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
